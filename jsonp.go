@@ -62,8 +62,6 @@ func Lex(buf *bytes.Buffer) [][]string {
 				continue
 			}
 			char, _ := utf8.DecodeRune(scannedBytes)
-			if len(token)-2 > 0 {
-				prevChar = rune(token[len(token)-2])
 			if unicode.IsSpace(char) && !unicode.IsLetter(prevChar) && string(prevChar) != "\"" {
 				continue
 			}
@@ -73,6 +71,7 @@ func Lex(buf *bytes.Buffer) [][]string {
 			}
 			token += string(char)
 			processStaticTokensAndContinue(char, &token, &lineTokens)
+			prevChar = char
 
 		}
 		tokens = append(tokens, lineTokens)
