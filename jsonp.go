@@ -57,13 +57,10 @@ func Lex(buf *bytes.Buffer) [][]string {
 		token := ""
 		prevChar := rune(0)
 		for runeScanner.Scan() {
-
-			fmt.Printf("Lines: %#v \n", lineTokens)
 			scannedBytes := runeScanner.Bytes()
 			if runeScanner.Text() == "\n" {
 				continue
 			}
-			// return error token if not {, [, or alphanum
 			char, _ := utf8.DecodeRune(scannedBytes)
 			skipWhitespace(&char, runeScanner)
 			if len(token)-2 > 0 {
@@ -73,10 +70,6 @@ func Lex(buf *bytes.Buffer) [][]string {
 				lineTokens = append(lineTokens, string(token))
 			}
 			token += string(char)
-
-			fmt.Println("token:", token)
-			fmt.Println("char:", string(char))
-			fmt.Println("Prev char:", string(prevChar))
 			switch string(char) {
 			case "{", "}", ":", ",", "\"", "[", "]":
 				lineTokens = append(lineTokens, string(char))
@@ -93,7 +86,6 @@ func Lex(buf *bytes.Buffer) [][]string {
 		}
 		tokens = append(tokens, lineTokens)
 	}
-	fmt.Printf("Tokens: %#v \n", tokens)
 	return tokens
 }
 func skipWhitespace(char *rune, scanner *bufio.Scanner) {
