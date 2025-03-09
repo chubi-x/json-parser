@@ -62,9 +62,10 @@ func Lex(buf *bytes.Buffer) [][]string {
 				continue
 			}
 			char, _ := utf8.DecodeRune(scannedBytes)
-			skipWhitespace(&char, runeScanner)
 			if len(token)-2 > 0 {
 				prevChar = rune(token[len(token)-2])
+			if unicode.IsSpace(char) && !unicode.IsLetter(prevChar) && string(prevChar) != "\"" {
+				continue
 			}
 			if string(char) == "\"" && prevChar != rune(0) {
 				lineTokens = append(lineTokens, string(token))
@@ -88,9 +89,5 @@ func Lex(buf *bytes.Buffer) [][]string {
 	}
 	return tokens
 }
-func skipWhitespace(char *rune, scanner *bufio.Scanner) {
-	for unicode.IsSpace(*char) {
-		scanner.Scan()
-		*char, _ = utf8.DecodeRune(scanner.Bytes())
 	}
 }
