@@ -47,11 +47,11 @@ func main() {
 	Lex(buf)
 }
 func Lex(buf *bytes.Buffer) [][]string {
-	scanner := bufio.NewScanner(bytes.NewReader(buf.Bytes()))
-	scanner.Split(bufio.ScanLines)
+	lineScanner := bufio.NewScanner(bytes.NewReader(buf.Bytes()))
+	lineScanner.Split(bufio.ScanLines)
 	tokens := [][]string{}
-	for scanner.Scan() {
-		runeScanner := bufio.NewScanner(bytes.NewReader(scanner.Bytes()))
+	for lineScanner.Scan() {
+		runeScanner := bufio.NewScanner(bytes.NewReader(lineScanner.Bytes()))
 		runeScanner.Split(bufio.ScanRunes)
 		lineTokens := []string{}
 		token := ""
