@@ -76,6 +76,10 @@ func Lex(buf *bytes.Buffer) [][]string {
 		}
 		tokens = append(tokens, lineTokens)
 	}
+	for i := 0; i < len(tokens); i++ {
+
+		fmt.Printf("Line: %#v \n", tokens[i])
+	}
 	return tokens
 }
 func processStaticTokensAndContinue(char rune, token *string, lineTokens *[]string) {
