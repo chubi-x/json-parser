@@ -72,23 +72,26 @@ func Lex(buf *bytes.Buffer) [][]string {
 				lineTokens = append(lineTokens, string(token))
 			}
 			token += string(char)
-			switch string(char) {
-			case "{", "}", ":", ",", "\"", "[", "]":
-				lineTokens = append(lineTokens, string(char))
-				token = ""
-				continue
-			}
-			switch token {
-			case "true", "false", "null":
-				lineTokens = append(lineTokens, token)
-				token = ""
-				continue
-			}
+			processStaticTokensAndContinue(char, &token, &lineTokens)
 
 		}
 		tokens = append(tokens, lineTokens)
 	}
 	return tokens
 }
+func processStaticTokensAndContinue(char rune, token *string, lineTokens *[]string) {
+	goToNextToken := false
+	switch string(char) {
+	case "{", "}", ":", ",", "\"", "[", "]":
+		*lineTokens = append(*lineTokens, string(char))
+		goToNextToken = true
+	}
+	switch *token {
+	case "true", "false", "null":
+		*lineTokens = append(*lineTokens, *token)
+		goToNextToken = true
+	}
+	if goToNextToken {
+		*token = ""
 	}
 }
