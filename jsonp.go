@@ -67,7 +67,8 @@ func Lex(buf *bytes.Buffer) [][]string {
 			if unicode.IsSpace(char) && !unicode.IsLetter(prevChar) && string(prevChar) != "\"" {
 				continue
 			}
-			if string(char) == "\"" && prevChar != rune(0) {
+			// save string token when we reach closing quote
+			if string(char) == "\"" && prevChar != rune(0) && token != "" {
 				lineTokens = append(lineTokens, string(token))
 			}
 			token += string(char)
