@@ -57,19 +57,25 @@ func Lex(buf *bytes.Buffer) [][]string {
 		token := ""
 		prevChar := rune(0)
 		isLexingNumber := false
+		isLexingString := false
 		for runeScanner.Scan() {
 			scannedBytes := runeScanner.Bytes()
 			if runeScanner.Text() == "\n" {
 				continue
 			}
 			char, _ := utf8.DecodeRune(scannedBytes)
+			if string(char) == "\"" && token == "" {
+				isLexingString = true
+			}
 			//skip spaces that do not exist within a string
-			if unicode.IsSpace(char) && !unicode.IsLetter(prevChar) && string(prevChar) != "\"" {
+			if unicode.IsSpace(char) && !isLexingString {
 				continue
 			}
 			// save string token when we reach closing quote
 			if string(char) == "\"" && prevChar != rune(0) && token != "" {
 				lineTokens = append(lineTokens, string(token))
+				isLexingString = false
+				token = ""
 			}
 			// TODO: handle escaped characters
 			// handle integer digits
