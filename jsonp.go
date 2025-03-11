@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"slices"
 	"unicode"
 	"unicode/utf8"
 )
@@ -27,7 +28,6 @@ func main() {
 	// scan line for json tokens
 	// using ScanRune. scan each character and match to a token.
 	// use json mckenna format
-	// validate elements first, where element  = ws value ws
 	var buf *bytes.Buffer = bytes.NewBuffer(make([]byte, 0))
 
 	flag.Parse()
@@ -74,9 +74,8 @@ func Lex(buf *bytes.Buffer) [][]string {
 			}
 			// save string token when we reach closing quote
 			if string(char) == "\"" && prevChar != rune(0) && token != "" {
-				lineTokens = append(lineTokens, string(token))
 				isLexingString = false
-				token = ""
+				saveToken(&token, &lineTokens)
 			}
 			// TODO: handle escaped characters
 			// handle integer digits
@@ -86,9 +85,8 @@ func Lex(buf *bytes.Buffer) [][]string {
 			}
 			// if we're lexing an integer accumulate the token until we hit a comma
 			if isLexingNumber && unicode.IsNumber(prevChar) && string(char) == "," {
-				lineTokens = append(lineTokens, string(token))
-				token = ""
 				isLexingNumber = false
+				saveToken(&token, &lineTokens)
 			}
 			token += string(char)
 			if slices.Contains(staticTokens, token) {
