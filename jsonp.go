@@ -50,6 +50,7 @@ func Lex(buf *bytes.Buffer) [][]string {
 	lineScanner := bufio.NewScanner(bytes.NewReader(buf.Bytes()))
 	lineScanner.Split(bufio.ScanLines)
 	tokens := [][]string{}
+	staticTokens := []string{"{", "}", ":", ",", "\"", "[", "]", "true", "false", "null"}
 	for lineScanner.Scan() {
 		runeScanner := bufio.NewScanner(bytes.NewReader(lineScanner.Bytes()))
 		runeScanner.Split(bufio.ScanRunes)
@@ -90,7 +91,9 @@ func Lex(buf *bytes.Buffer) [][]string {
 				isLexingNumber = false
 			}
 			token += string(char)
-			processStaticTokensAndContinue(&token, &lineTokens)
+			if slices.Contains(staticTokens, token) {
+				saveToken(&token, &lineTokens)
+			}
 			prevChar = char
 
 		}
@@ -102,10 +105,8 @@ func Lex(buf *bytes.Buffer) [][]string {
 	}
 	return tokens
 }
-func processStaticTokensAndContinue(token *string, lineTokens *[]string) {
-	switch *token {
-	case "{", "}", ":", ",", "\"", "[", "]", "true", "false", "null":
-		*lineTokens = append(*lineTokens, *token)
-		*token = ""
-	}
+func saveToken(token *string, lineTokens *[]string) {
+	*lineTokens = append(*lineTokens, *token)
+	*token = ""
+
 }
