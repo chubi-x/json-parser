@@ -90,7 +90,7 @@ func Lex(buf *bytes.Buffer) [][]string {
 				isLexingNumber = false
 			}
 			token += string(char)
-			processStaticTokensAndContinue(char, &token, &lineTokens)
+			processStaticTokensAndContinue(&token, &lineTokens)
 			prevChar = char
 
 		}
@@ -102,19 +102,10 @@ func Lex(buf *bytes.Buffer) [][]string {
 	}
 	return tokens
 }
-func processStaticTokensAndContinue(char rune, token *string, lineTokens *[]string) {
-	goToNextToken := false
-	switch string(char) {
-	case "{", "}", ":", ",", "\"", "[", "]":
-		*lineTokens = append(*lineTokens, string(char))
-		goToNextToken = true
-	}
+func processStaticTokensAndContinue(token *string, lineTokens *[]string) {
 	switch *token {
-	case "true", "false", "null":
+	case "{", "}", ":", ",", "\"", "[", "]", "true", "false", "null":
 		*lineTokens = append(*lineTokens, *token)
-		goToNextToken = true
-	}
-	if goToNextToken {
 		*token = ""
 	}
 }
