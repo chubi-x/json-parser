@@ -23,26 +23,23 @@ func handleError(errMsg string, err error) {
 var fileName string
 
 func main() {
-
-	// scan file line by line
-	// scan line for json tokens
-	// using ScanRune. scan each character and match to a token.
 	// use json mckenna format
 	var buf *bytes.Buffer = bytes.NewBuffer(make([]byte, 0))
-
+	flag.StringVar(&fileName, "file", "", "Path to JSON file")
 	flag.Parse()
+	if fileName != "" {
 
-	if file_arg := flag.Arg(0); file_arg == "" {
+		openFile, err := os.Open(fileName)
+
+		_, copyErr := io.Copy(buf, openFile)
+		handleError("Unable to read file ", err)
+		handleError("Error opening file "+fileName, copyErr)
+		defer openFile.Close()
+	} else if jsonString := flag.Arg(0); jsonString == "" && fileName == "" {
 		_, err := io.Copy(buf, os.Stdin)
 		handleError("Unable to read from Stdin", err)
 	} else {
-		fileName = file_arg
-		open_file, err := os.Open(fileName)
-
-		_, copyErr := io.Copy(buf, open_file)
-		handleError("Unable to read file ", err)
-		handleError("Error opening file "+fileName, copyErr)
-		defer open_file.Close()
+		buf = bytes.NewBufferString(jsonString)
 	}
 	Lex(buf)
 }
