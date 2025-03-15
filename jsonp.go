@@ -67,12 +67,11 @@ func Lex(buf *bytes.Buffer) [][]string {
 			if unicode.IsSpace(char) && !isLexingString {
 				continue
 			}
-			// save string token when we reach closing quote
-			if string(char) == "\"" && prevChar != rune(0) && token != "" {
+			// save string token when we reach closing quote. handles escaped quotes
+			if char == '"' && prevChar != rune(0) && prevChar != '\\' && token != "" {
 				isLexingString = false
 				saveToken(&token, &lineTokens)
 			}
-			// TODO: handle escaped characters
 			if (string(prevChar) == "-" && unicode.IsNumber(char)) || unicode.IsNumber(char) {
 				isLexingNumber = true
 			}
