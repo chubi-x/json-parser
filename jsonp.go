@@ -44,6 +44,7 @@ func main() {
 	Lex(buf)
 }
 func Lex(buf *bytes.Buffer) [][]string {
+
 	lineScanner := bufio.NewScanner(bytes.NewReader(buf.Bytes()))
 	lineScanner.Split(bufio.ScanLines)
 	tokens := [][]string{}
@@ -101,7 +102,9 @@ func isExponent(char rune) bool {
 	return (string(char) == "e" || string(char) == "E")
 }
 func saveToken(token *string, lineTokens *[]string) {
-	*lineTokens = append(*lineTokens, *token)
-	*token = ""
+	if *token != "" {
+		*lineTokens = append(*lineTokens, *token)
+		*token = ""
+	}
 
 }
