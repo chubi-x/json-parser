@@ -58,9 +58,6 @@ func Lex(buf *bytes.Buffer) [][]string {
 		isLexingString := false
 		for runeScanner.Scan() {
 			scannedBytes := runeScanner.Bytes()
-			if runeScanner.Text() == "\n" {
-				continue
-			}
 			char, _ := utf8.DecodeRune(scannedBytes)
 			if string(char) == "\"" && token == "" {
 				isLexingString = true
