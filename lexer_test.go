@@ -5,8 +5,41 @@ import (
 	"testing"
 )
 
+func TestTrueBoolean(t *testing.T) {
+
+	buffer := bytes.NewBufferString(
+		`{
+    "true": true,
+    }`)
+	tokens := Lex(buffer)
+	if len(tokens[1]) != 6 {
+		t.Errorf("Expected 6 token on Line 2, Got : %d", len(tokens[1]))
+	}
+}
+func TestFalseBoolean(t *testing.T) {
+
+	buffer := bytes.NewBufferString(
+		`{
+    "false": false,
+    }`)
+	tokens := Lex(buffer)
+	if len(tokens[1]) != 6 {
+		t.Errorf("Expected 6 token on Line 2, Got : %d", len(tokens[1]))
+	}
+}
+func TestNull(t *testing.T) {
+
+	buffer := bytes.NewBufferString(
+		`{
+    "null": null,
+    }`)
+	tokens := Lex(buffer)
+	if len(tokens[1]) != 6 {
+		t.Errorf("Expected 6 token on Line 2, Got : %d", len(tokens[1]))
+	}
+}
 func TestSingleLineObjectWithSpacesBetweenValues(t *testing.T) {
-	buffer := bytes.NewBufferString("{\"hey\":\" null\", \"how far\":      \"i dey\", \"key2\": \"time\"}")
+	buffer := bytes.NewBufferString(`{"hey":" null", "how far":      "i dey", "key2": "time"}`)
 	tokens := Lex(buffer)
 	numLines := len(tokens)
 	numTokens := len(tokens[0])
@@ -211,7 +244,7 @@ func TestArrayContainingStringsAndFloats(t *testing.T) {
 	tokens := Lex(buffer)
 	if len(tokens[0]) != 25 {
 		t.Errorf("Expected 25 tokens, Got : %d", len(tokens[0]))
-  }
+	}
 }
 func TestArrayContainingStringsAndIntegers(t *testing.T) {
 
@@ -294,4 +327,81 @@ func TestMultilineArrayWithMultipleElements(t *testing.T) {
 	if len(tokens[4]) != 1 {
 		t.Errorf("Expected 1 token on Line 5, Got : %d", len(tokens[4]))
 	}
+}
+
+func TestComplexObjectWithEdgeCases(t *testing.T) {
+	buffer := bytes.NewBufferString(
+		`[
+    "JSON Test Pattern pass1",
+    {"object with 1 member":["array with 1 element"]},
+    {},
+    [],
+    -42,
+    true,
+    false,
+    null,
+    {
+        "integer": 1234567890,
+        "real": -9876.543210,
+        "e": 0.123456789e-12,
+        "E": 1.234567890E+34,
+        "":  23456789012E66,
+        "zero": 0,
+        "one": 1,
+        "space": " ",
+        "quote": "\"",
+        "backslash": "\\",
+        "controls": "\b\f\n\r\t",
+        "slash": "/ & \/",
+        "alpha": "abcdefghijklmnopqrstuvwyz",
+        "ALPHA": "ABCDEFGHIJKLMNOPQRSTUVWYZ",
+        "digit": "0123456789",
+        "0123456789": "digit",
+        "special": "1~!@#$%^&*()_+-={':[,]}|;.</>?",
+        "hex": "\u0123\u4567\u89AB\uCDEF\uabcd\uef4A",
+        "true": true,
+        "false": false,
+        "null": null,
+        "array":[  ],
+        "object":{  },
+        "address": "50 St. James Street",
+        "url": "http://www.JSON.org/",
+        "comment": "// /* <!-- --",
+        "# -- --> */": " ",
+        " s p a c e d " :[1,2 , 3
+
+,
+
+4 , 5        ,          6           ,7        ],"compact":[1,2,3,4,5,6,7],
+        "jsontext": "{\"object with 1 member\":[\"array with 1 element\"]}",
+        "quotes": "&#34; \u0022 %22 0x22 034 &#x22;",
+        "\/\\\"\uCAFE\uBABE\uAB98\uFCDE\ubcda\uef4A\b\f\n\r\t1~!@#$%^&*()_+-=[]{}|;:',./<>?"
+: "A key can be any string"
+    },
+    0.5 ,98.6
+,
+99.44
+,
+
+1066,
+1e1,
+0.1e1,
+1e-1,
+1e00,2e+00,2e-00
+,"rosebud"]`)
+
+	tokens := Lex(buffer)
+	if len(tokens) != 58 {
+		t.Errorf("Expected 58 lines. Got: %d", len(tokens))
+	}
+	tokenCount := []int{1, 4, 12, 3, 3, 2, 2, 2, 2, 1, 6, 6, 6, 6, 5, 6, 6, 8, 8,
+		8, 8, 8, 8, 8, 8, 8, 8, 8, 6, 6, 6, 7, 7, 8, 8, 8, 8,
+		10, 0, 1, 0, 29, 8, 8, 1, 4, 2, 3, 1, 1, 1, 0, 2, 2, 2, 2, 5, 5}
+	for i := 0; i < len(tokenCount); i++ {
+
+		if len(tokens[i]) != tokenCount[i] {
+			t.Errorf("Expected %d token on Line %d, Got : %d", tokenCount[i], i+1, len(tokens[i]))
+		}
+	}
+
 }
