@@ -173,9 +173,17 @@ func TestArrayContainingFloats(t *testing.T) {
 		t.Errorf("Expected 15 tokens, Got : %d", len(tokens[0]))
 	}
 }
-func TestArrayContainingIntegers(t *testing.T) {
+func TestArrayContainingPositiveIntegers(t *testing.T) {
 
 	buffer := bytes.NewBufferString(`{"key": [2, 4, 5, 3]}`)
+	tokens := Lex(buffer)
+	if len(tokens[0]) != 15 {
+		t.Errorf("Expected 15 tokens, Got : %d", len(tokens[0]))
+	}
+}
+func TestArrayContainingNegativeIntegers(t *testing.T) {
+
+	buffer := bytes.NewBufferString(`{"key": [-2, -4, 5, -3]}`)
 	tokens := Lex(buffer)
 	if len(tokens[0]) != 15 {
 		t.Errorf("Expected 15 tokens, Got : %d", len(tokens[0]))
@@ -203,7 +211,7 @@ func TestArrayContainingStringsAndFloats(t *testing.T) {
 	tokens := Lex(buffer)
 	if len(tokens[0]) != 25 {
 		t.Errorf("Expected 25 tokens, Got : %d", len(tokens[0]))
-	}
+  }
 }
 func TestArrayContainingStringsAndIntegers(t *testing.T) {
 
