@@ -72,13 +72,13 @@ func Lex(buf *bytes.Buffer) [][]string {
 				saveToken(&token, &lineTokens)
 			}
 			// TODO: handle escaped characters
-			// handle integer digits
-			// when we reach the first number, check if previousChar is : accumulate token until we hit a ,
-			if string(prevChar) == ":" && string(char) != "," && unicode.IsNumber(char) || string(char) == "-" {
+			if (string(prevChar) == "-" && unicode.IsNumber(char)) || unicode.IsNumber(char) {
 				isLexingNumber = true
 			}
-			// if we're lexing an integer accumulate the token until we hit a comma
-			if isLexingNumber && unicode.IsNumber(prevChar) && string(char) == "," {
+			isLexingFloat := string(char) == "."
+			isLexingExponent := isExponent(char)
+			isLexingExponentSign := isExponent(prevChar) && (string(char) == "+" || string(char) == "-")
+			if isLexingNumber && !isLexingFloat && !isLexingExponent && !isLexingExponentSign && !unicode.IsNumber(char) {
 				isLexingNumber = false
 				saveToken(&token, &lineTokens)
 			}
@@ -96,6 +96,9 @@ func Lex(buf *bytes.Buffer) [][]string {
 		fmt.Printf("Line: %#v \n", tokens[i])
 	}
 	return tokens
+}
+func isExponent(char rune) bool {
+	return (string(char) == "e" || string(char) == "E")
 }
 func saveToken(token *string, lineTokens *[]string) {
 	*lineTokens = append(*lineTokens, *token)
