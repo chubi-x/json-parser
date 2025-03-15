@@ -89,6 +89,8 @@ func Lex(buf *bytes.Buffer) [][]string {
 			prevChar = char
 
 		}
+		// save the last token that was accumulated
+		saveToken(&token, &lineTokens)
 		tokens = append(tokens, lineTokens)
 	}
 	for i := 0; i < len(tokens); i++ {
