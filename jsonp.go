@@ -60,7 +60,7 @@ func Lex(buf *bytes.Buffer) [][]string {
 		for runeScanner.Scan() {
 			scannedBytes := runeScanner.Bytes()
 			char, _ := utf8.DecodeRune(scannedBytes)
-			if string(char) == "\"" && token == "" {
+			if char == '"' && token == "" {
 				isLexingString = true
 			}
 			//skip spaces that do not exist within a string
@@ -72,12 +72,12 @@ func Lex(buf *bytes.Buffer) [][]string {
 				isLexingString = false
 				saveToken(&token, &lineTokens)
 			}
-			if (string(prevChar) == "-" && unicode.IsNumber(char)) || unicode.IsNumber(char) {
+			if (prevChar == '-' && unicode.IsNumber(char)) || unicode.IsNumber(char) {
 				isLexingNumber = true
 			}
-			isLexingFloat := string(char) == "."
+			isLexingFloat := char == '.'
 			isLexingExponent := isExponent(char)
-			isLexingExponentSign := isExponent(prevChar) && (string(char) == "+" || string(char) == "-")
+			isLexingExponentSign := isExponent(prevChar) && (char == '+' || char == '-')
 			if isLexingNumber && !isLexingFloat && !isLexingExponent && !isLexingExponentSign && !unicode.IsNumber(char) {
 				isLexingNumber = false
 				saveToken(&token, &lineTokens)
@@ -97,8 +97,9 @@ func Lex(buf *bytes.Buffer) [][]string {
 	}
 	return tokens
 }
+
 func isExponent(char rune) bool {
-	return (string(char) == "e" || string(char) == "E")
+	return (char == 'e' || char == 'E')
 }
 func saveToken(token *string, lineTokens *[]string) {
 	if *token != "" {
