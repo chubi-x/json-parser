@@ -66,6 +66,8 @@ func Lex(buf *bytes.Buffer) [][]string {
 			}
 			//skip spaces that do not exist within a string
 			if unicode.IsSpace(char) && !isLexingString {
+				prevChar = char
+				saveToken(&token, &lineTokens, &currentTokenIndex)
 				continue
 			}
 			prevTokenIsQuote := len(lineTokens) > 0 && lineTokens[currentTokenIndex-1] == "\""
