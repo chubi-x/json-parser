@@ -54,25 +54,30 @@ func Lex(buf *bytes.Buffer) [][]string {
 		runeScanner.Split(bufio.ScanRunes)
 		lineTokens := []string{}
 		token := ""
+		currentTokenIndex := 0
 		prevChar := rune(0)
 		isLexingNumber := false
 		isLexingString := false
 		for runeScanner.Scan() {
 			scannedBytes := runeScanner.Bytes()
 			char, _ := utf8.DecodeRune(scannedBytes)
-			if char == '"' && token == "" {
+			if char == '"' && !isLexingString {
 				isLexingString = true
 			}
 			//skip spaces that do not exist within a string
 			if unicode.IsSpace(char) && !isLexingString {
 				continue
 			}
-			// save string token when we reach closing quote. handles escaped quotes
-			if char == '"' && prevChar != rune(0) && prevChar != '\\' && token != "" {
+			prevTokenIsQuote := len(lineTokens) > 0 && lineTokens[currentTokenIndex-1] == "\""
+			//stop lexing key string after reaching end quote
+			if char == ':' && prevTokenIsQuote {
 				isLexingString = false
-				saveToken(&token, &lineTokens)
 			}
-			if (prevChar == '-' && unicode.IsNumber(char)) || unicode.IsNumber(char) {
+			// save value string token when we reach closing quote. handles escaped quotes
+			if isLexingString && char == '"' && prevChar != rune(0) && prevChar != '\\' && prevTokenIsQuote {
+				isLexingString = false
+				saveToken(&token, &lineTokens, &currentTokenIndex)
+			}
 				isLexingNumber = true
 			}
 			isLexingFloat := char == '.'
@@ -80,17 +85,17 @@ func Lex(buf *bytes.Buffer) [][]string {
 			isLexingExponentSign := isExponent(prevChar) && (char == '+' || char == '-')
 			if isLexingNumber && !isLexingFloat && !isLexingExponent && !isLexingExponentSign && !unicode.IsNumber(char) {
 				isLexingNumber = false
-				saveToken(&token, &lineTokens)
+				saveToken(&token, &lineTokens, &currentTokenIndex)
+			}
+			if slices.Contains(staticTokens, token) {
+				saveToken(&token, &lineTokens, &currentTokenIndex)
 			}
 			token += string(char)
-			if slices.Contains(staticTokens, token) {
-				saveToken(&token, &lineTokens)
-			}
 			prevChar = char
 
 		}
 		// save the last token that was accumulated
-		saveToken(&token, &lineTokens)
+		saveToken(&token, &lineTokens, &currentTokenIndex)
 		tokens = append(tokens, lineTokens)
 	}
 	for i := 0; i < len(tokens); i++ {
@@ -103,10 +108,11 @@ func Lex(buf *bytes.Buffer) [][]string {
 func isExponent(char rune) bool {
 	return (char == 'e' || char == 'E')
 }
-func saveToken(token *string, lineTokens *[]string) {
+func saveToken(token *string, lineTokens *[]string, currentTokenIndex *int) {
 	if *token != "" {
 		*lineTokens = append(*lineTokens, *token)
 		*token = ""
+		*currentTokenIndex++
 	}
 
 }
