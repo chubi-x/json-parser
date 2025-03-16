@@ -81,7 +81,7 @@ func Lex(buf *bytes.Buffer) [][]string {
 				saveToken(&token, &lineTokens, &currentTokenIndex)
 			}
 			isNegative := prevChar == '-' && unicode.IsNumber(char)
-			if !isLexingString && token != "" && (isNegative || unicode.IsNumber(char)) {
+			if !isLexingString && (isNegative || unicode.IsNumber(char)) {
 				isLexingNumber = true
 			}
 			isLexingFloat := char == '.'
