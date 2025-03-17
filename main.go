@@ -91,7 +91,9 @@ func Lex(buf *bytes.Buffer) [][]string {
 				isLexingNumber = false
 				saveToken(&token, &lineTokens, &prevToken)
 			}
-			if slices.Contains(staticTokens, token) {
+			// only save static tokens that are not part of a string
+			// De Morgan's Law to the rescue. second condition was previously !(token !="\"" && isLexingString && prevTokenIsQuote)
+			if slices.Contains(staticTokens, token) && (token == "\"" || !isLexingString || !prevTokenIsQuote) {
 				saveToken(&token, &lineTokens, &prevToken)
 			}
 			token += string(char)
