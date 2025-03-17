@@ -76,6 +76,7 @@ func Lex(buf *bytes.Buffer) [][]string {
 				isLexingString = false
 			}
 			// save value string token when we reach closing quote. handles escaped quotes
+			// TODO: This a naive implementation as it doesn't cover the edge case where the string "\\" is read as one token instead of 3
 			if isLexingString && char == '"' && prevChar != rune(0) && prevChar != '\\' && prevTokenIsQuote {
 				isLexingString = false
 				saveToken(&token, &lineTokens, &prevToken)
