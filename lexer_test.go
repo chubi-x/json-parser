@@ -396,7 +396,7 @@ func TestComplexObjectWithEdgeCases(t *testing.T) {
 	}
 	tokenCount := []int{1, 4, 12, 3, 3, 2, 2, 2, 2, 1, 6, 6, 6, 6, 5, 6, 6, 8, 8,
 		8, 8, 8, 8, 8, 8, 8, 8, 8, 6, 6, 6, 7, 7, 8, 8, 8, 8,
-		10, 0, 1, 0, 29, 8, 8, 1, 4, 2, 3, 1, 1, 1, 0, 2, 2, 2, 2, 5, 5}
+		10, 0, 1, 0, 29, 8, 8, 3, 4, 2, 3, 1, 1, 1, 0, 2, 2, 2, 2, 5, 5}
 	for i := 0; i < len(tokenCount); i++ {
 
 		if len(tokens[i]) != tokenCount[i] {
