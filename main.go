@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"slices"
+	"strconv"
 	"unicode"
 	"unicode/utf8"
 )
@@ -106,12 +107,89 @@ func Lex(buf *bytes.Buffer) [][]string {
 		tokens = append(tokens, lineTokens)
 	}
 	for i := 0; i < len(tokens); i++ {
-
 		fmt.Printf("Line: %#v \n", tokens[i])
 	}
 	return tokens
 }
 
+// in recursive descent parsers we write a method to match each "entity " in the string
+// we also have methods that implement a production rule in the grammar, so basically we need function to match:
+// keyword tokens, numbers, strings, objects, and arrays
+func Parse(tokens [][]string) (bool, error) {
+	// flatten tokens
+	// need to use lookahead method to keep track of our current postiion,
+	// so use a pointer instead of looping.
+	// track current position, look at next position. call every single match function that we have.
+	// if any of them match increase your pointer and start the process all over again
+	// if not throw an error. what if there are multiple errors? then keep track of all errors.
+	newTokens := slices.Concat(tokens...)
+	pos := -1
+	switch newTokens[0] {
+	case "{":
+		parseObject(newTokens[1:], &pos)
+	case "[":
+		parseArray(newTokens[1:], &pos)
+	}
+	return false, fmt.Errorf("Invalid JSON string. Expected { or [, got %s", newTokens[0])
+}
+
+func parseObject(tokens []string, pos *int) bool {
+
+	// parse
+	*pos += 1
+	parseLeftCurlyBrace(tokens[*pos], pos)
+	parseQuote(tokens[*pos], pos)
+	parseString()
+	parseQuote(tokens[*pos], pos)
+	parseColon(tokens[*pos], pos)
+	// is string or number or array
+
+	return false
+	// parse colon
+	// parse value
+}
+func parseArray(tokens []string, pos *int) {
+
+}
+func parseColon(token string, pos *int) bool {
+	return matchKeyword(token, ":", pos)
+}
+func parseLeftCurlyBrace(token string, pos *int) bool {
+	return matchKeyword(token, "{", pos)
+}
+func parseRightCurlyBrace(token string, pos *int) bool {
+	return matchKeyword(token, "}", pos)
+}
+func parseComma(token string, pos *int) bool {
+	return matchKeyword(token, ",", pos)
+}
+func parseQuote(token string, pos *int) bool {
+	return matchKeyword(token, "\"", pos)
+}
+func parseString() {}
+func parseNumber(token string, pos *int) bool {
+	_, intErr := strconv.ParseInt(token, 10, 64)
+	_, floatErr := strconv.ParseFloat(token, 64)
+	if intErr != nil && floatErr != nil {
+		return false
+	}
+	*pos += 1
+	return true
+
+}
+func parseBool(token string, pos *int) bool {
+	return matchKeyword(token, "true", pos) || matchKeyword(token, "false", pos) || matchKeyword(token, "null", pos)
+}
+
+func matchKeyword(token string, keyword string, pos *int) bool {
+	if token == keyword {
+		*pos += 1
+		return true
+	}
+	return false
+}
+
+// lexing functions
 func isExponent(char rune) bool {
 	return (char == 'e' || char == 'E')
 }
