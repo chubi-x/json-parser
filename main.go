@@ -144,12 +144,16 @@ func parseObject(tokens []string, pos *int) bool {
 	parseColon(tokens[*pos], pos)
 	// is string or number or array
 
+	parseRightCurlyBrace(tokens[*pos], pos)
 	return false
 	// parse colon
 	// parse value
 }
 func parseArray(tokens []string, pos *int) {
-
+	*pos += 1
+	parseLeftSquareBrace(tokens[*pos], pos)
+	// could be a string, number, object, or array
+	parseRightSquareBrace(tokens[*pos], pos)
 }
 func parseColon(token string, pos *int) bool {
 	return matchKeyword(token, ":", pos)
@@ -159,6 +163,12 @@ func parseLeftCurlyBrace(token string, pos *int) bool {
 }
 func parseRightCurlyBrace(token string, pos *int) bool {
 	return matchKeyword(token, "}", pos)
+}
+func parseLeftSquareBrace(token string, pos *int) bool {
+	return matchKeyword(token, "[", pos)
+}
+func parseRightSquareBrace(token string, pos *int) bool {
+	return matchKeyword(token, "]", pos)
 }
 func parseComma(token string, pos *int) bool {
 	return matchKeyword(token, ",", pos)
