@@ -42,7 +42,8 @@ func main() {
 	} else {
 		buf = bytes.NewBufferString(jsonString)
 	}
-	Lex(buf)
+	tokens := Lex(buf)
+	fmt.Println(Parse(slices.Concat(tokens...)))
 }
 func Lex(buf *bytes.Buffer) [][]string {
 
@@ -115,88 +116,188 @@ func Lex(buf *bytes.Buffer) [][]string {
 // in recursive descent parsers we write a method to match each "entity " in the string
 // we also have methods that implement a production rule in the grammar, so basically we need function to match:
 // keyword tokens, numbers, strings, objects, and arrays
-func Parse(tokens [][]string) (bool, error) {
+func Parse(tokens []string) (bool, error) {
 	// flatten tokens
 	// need to use lookahead method to keep track of our current postiion,
 	// so use a pointer instead of looping.
 	// track current position, look at next position. call every single match function that we have.
 	// if any of them match increase your pointer and start the process all over again
 	// if not throw an error. what if there are multiple errors? then keep track of all errors.
-	newTokens := slices.Concat(tokens...)
 	pos := -1
-	switch newTokens[0] {
-	case "{":
-		parseObject(newTokens[1:], &pos)
-	case "[":
-		parseArray(newTokens[1:], &pos)
+	if len(tokens) == 0 {
+		return false, fmt.Errorf("Expected tokens but found nil")
 	}
-	return false, fmt.Errorf("Invalid JSON string. Expected { or [, got %s", newTokens[0])
+	if matchLeftCurlyBrace(tokens[pos+1]) {
+		_, err := parseObject(tokens, &pos, true)
+		if err != nil {
+			return false, err
+		}
+		return true, nil
+	} else if matchLeftSquareBrace(tokens[pos+1]) {
+		parseArray(tokens, &pos)
+	}
+	return false, fmt.Errorf("Invalid JSON string. Expected { or [, got %s", tokens[pos])
 }
 
-func parseObject(tokens []string, pos *int) bool {
-
-	// parse
+func nextToken(pos *int) {
 	*pos += 1
-	parseLeftCurlyBrace(tokens[*pos], pos)
-	parseQuote(tokens[*pos], pos)
-	parseString()
-	parseQuote(tokens[*pos], pos)
-	parseColon(tokens[*pos], pos)
-	// is string or number or array
-
-	parseRightCurlyBrace(tokens[*pos], pos)
-	return false
-	// parse colon
-	// parse value
 }
-func parseArray(tokens []string, pos *int) {
+
+func parseObject(tokens []string, pos *int, args ...bool) (bool, error) {
+	isOuterObject := false
+	if len(args) > 0 {
+		isOuterObject = args[0]
+	}
+	nextToken(pos)
+
+	if matchRightCurlyBrace(tokens[*pos+1]) {
+		if matchComma(tokens[*pos]) {
+			return false, err(*pos, "token", "}")
+		}
+		nextToken(pos)
+		if isOuterObject {
+			if *pos != len(tokens)-1 {
+				return false, err(*pos, "EOF", tokens[*pos+1])
+			}
+		}
+		return true, nil
+	} else if !matchQuote(tokens[*pos+1]) {
+		return false, err(*pos, "\"", tokens[*pos+1])
+	} else {
+		if _, err := parseString(tokens, pos); err != nil {
+			return false, err
+		}
+	}
+	if !matchColon(tokens[*pos+1]) {
+		return false, err(*pos, ":", tokens[*pos+1])
+	}
+	nextToken(pos)
+	//start a loop here
+	//match value
+	// for *pos < len(tokens) {
+	if matchNumber(tokens[*pos+1]) {
+		nextToken(pos)
+	} else if matchLeftCurlyBrace(tokens[*pos+1]) {
+		_, err := parseObject(tokens, pos)
+		if err != nil {
+			return false, err
+		}
+	} else if matchLeftSquareBrace(tokens[*pos+1]) {
+		_, err := parseArray(tokens, pos)
+		if err != nil {
+			return false, err
+		}
+	} else if matchQuote(tokens[*pos+1]) {
+		if _, err := parseString(tokens, pos); err != nil {
+			return false, err
+		}
+	} else if matchBool(tokens[*pos+1]) {
+		nextToken(pos)
+	} else {
+		return false, err(*pos, "token", tokens[*pos+1])
+	}
+	if !matchComma(tokens[*pos+1]) {
+
+		if !matchRightCurlyBrace(tokens[*pos+1]) {
+			return false, err(*pos, "}", tokens[*pos+1])
+		}
+		return true, nil
+	}
+	// }
+	_, err := parseObject(tokens, pos)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+
+	/* 1 if next token closing brace, update position and check is parent object
+		/    1.1 if isparentobject, assert that current token is the last token, if false return error
+		//return
+	/2 else if next token is not quote return false and error
+	/3 else update position. now current tkoen is is opening quote
+
+		4 if next token is not quote, update position. now we're at the string.
+		    if next token is not quote return false.
+		    update position. now were at closing quote.
+		5 else
+		    update position. now we're at closing quote.
+		6 if next token is not colon return error.
+		7 else update position. now we're at the colon.
+		8 if next token is number update position. now we're at the number
+		    else if next token is object, update position. trigger recursion.
+		   else if next token is LeftSquareBrace update position, call parse array
+		   else if next token is quote update position. now we're at opening quote.
+		      repeat steps 4-5.
+		9  else return error. expected either object, string, number, or array.
+		10 if next token is not comma
+		/      if next token is not closing brace return error.
+		//11  repeat steps 8-9
+	*/
+}
+
+func parseString(tokens []string, pos *int) (bool, error) {
+	nextToken(pos)
+	if !matchQuote(tokens[*pos+1]) {
+		nextToken(pos)
+		if !matchQuote(tokens[*pos+1]) {
+			return false, err(*pos, "\"", tokens[*pos])
+		}
+		nextToken(pos)
+	} else {
+		nextToken(pos)
+	}
+	return true, nil
+}
+func parseArray(tokens []string, pos *int) (bool, error) {
 	*pos += 1
-	parseLeftSquareBrace(tokens[*pos], pos)
+	matchLeftSquareBrace(tokens[*pos])
 	// could be a string, number, object, or array
-	parseRightSquareBrace(tokens[*pos], pos)
+	parseRightSquareBrace(tokens[*pos])
+	return true, nil
 }
-func parseColon(token string, pos *int) bool {
-	return matchKeyword(token, ":", pos)
+func matchColon(token string) bool {
+	return matchKeyword(token, ":")
 }
-func parseLeftCurlyBrace(token string, pos *int) bool {
-	return matchKeyword(token, "{", pos)
+func matchLeftCurlyBrace(token string) bool {
+	return matchKeyword(token, "{")
 }
-func parseRightCurlyBrace(token string, pos *int) bool {
-	return matchKeyword(token, "}", pos)
+func matchRightCurlyBrace(token string) bool {
+	return matchKeyword(token, "}")
 }
-func parseLeftSquareBrace(token string, pos *int) bool {
-	return matchKeyword(token, "[", pos)
+func matchLeftSquareBrace(token string) bool {
+	return matchKeyword(token, "[")
 }
-func parseRightSquareBrace(token string, pos *int) bool {
-	return matchKeyword(token, "]", pos)
+func parseRightSquareBrace(token string) bool {
+	return matchKeyword(token, "]")
 }
-func parseComma(token string, pos *int) bool {
-	return matchKeyword(token, ",", pos)
+func matchComma(token string) bool {
+	return matchKeyword(token, ",")
 }
-func parseQuote(token string, pos *int) bool {
-	return matchKeyword(token, "\"", pos)
+func matchQuote(token string) bool {
+	return matchKeyword(token, "\"")
 }
-func parseString() {}
-func parseNumber(token string, pos *int) bool {
+func matchNumber(token string) bool {
 	_, intErr := strconv.ParseInt(token, 10, 64)
 	_, floatErr := strconv.ParseFloat(token, 64)
 	if intErr != nil && floatErr != nil {
 		return false
 	}
-	*pos += 1
 	return true
 
 }
-func parseBool(token string, pos *int) bool {
-	return matchKeyword(token, "true", pos) || matchKeyword(token, "false", pos) || matchKeyword(token, "null", pos)
+func matchBool(token string) bool {
+	return matchKeyword(token, "true") || matchKeyword(token, "false") || matchKeyword(token, "null")
 }
 
-func matchKeyword(token string, keyword string, pos *int) bool {
+func matchKeyword(token string, keyword string) bool {
 	if token == keyword {
-		*pos += 1
 		return true
 	}
 	return false
+}
+
+func err(pos int, expected string, got string) error {
+	return fmt.Errorf("Error Parsing JSON at %d. Expected %s but got %s", pos, expected, got)
 }
 
 // lexing functions
