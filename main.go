@@ -13,7 +13,7 @@ import (
 	"unicode/utf8"
 )
 
-func handleError(errMsg string, err error) {
+func handleLexerError(errMsg string, err error) {
 	if err != nil {
 		io.WriteString(os.Stderr, fmt.Sprintf("%s: %s \n", errMsg, err))
 		os.Exit(1)
@@ -33,18 +33,20 @@ func main() {
 		openFile, err := os.Open(fileName)
 
 		_, copyErr := io.Copy(buf, openFile)
-		handleError("Unable to read file ", err)
-		handleError("Error opening file "+fileName, copyErr)
+		handleLexerError("Unable to read file ", err)
+		handleLexerError("Error opening file "+fileName, copyErr)
 		defer openFile.Close()
 	} else if jsonString := flag.Arg(0); jsonString == "" && fileName == "" {
 		_, err := io.Copy(buf, os.Stdin)
-		handleError("Unable to read from Stdin", err)
+		handleLexerError("Unable to read from Stdin", err)
 	} else {
 		buf = bytes.NewBufferString(jsonString)
 	}
 	tokens := Lex(buf)
 	fmt.Println(Parse(slices.Concat(tokens...)))
 }
+
+// Function to extract JSON tokens from a buffer
 func Lex(buf *bytes.Buffer) [][]string {
 
 	lineScanner := bufio.NewScanner(bytes.NewReader(buf.Bytes()))
@@ -116,13 +118,9 @@ func Lex(buf *bytes.Buffer) [][]string {
 // in recursive descent parsers we write a method to match each "entity " in the string
 // we also have methods that implement a production rule in the grammar, so basically we need function to match:
 // keyword tokens, numbers, strings, objects, and arrays
+
+// parse a given slice of already lexed tokens
 func Parse(tokens []string) (bool, error) {
-	// flatten tokens
-	// need to use lookahead method to keep track of our current postiion,
-	// so use a pointer instead of looping.
-	// track current position, look at next position. call every single match function that we have.
-	// if any of them match increase your pointer and start the process all over again
-	// if not throw an error. what if there are multiple errors? then keep track of all errors.
 	pos := -1
 	if len(tokens) == 0 {
 		return false, fmt.Errorf("Expected tokens but found nil")
