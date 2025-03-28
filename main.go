@@ -119,7 +119,7 @@ func Lex(buf *bytes.Buffer) [][]string {
 // we also have methods that implement a production rule in the grammar, so basically we need function to match:
 // keyword tokens, numbers, strings, objects, and arrays
 
-// parse a given slice of already lexed tokens
+// Parse a given slice of already lexed tokens
 func Parse(tokens []string) (bool, error) {
 	pos := -1
 	if len(tokens) == 0 {
