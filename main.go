@@ -282,7 +282,7 @@ func matchRightCurlyBrace(token string) bool {
 func matchLeftSquareBrace(token string) bool {
 	return matchKeyword(token, "[")
 }
-func parseRightSquareBrace(token string) bool {
+func matchRightSquareBrace(token string) bool {
 	return matchKeyword(token, "]")
 }
 func matchComma(token string) bool {
@@ -298,7 +298,6 @@ func matchNumber(token string) bool {
 		return false
 	}
 	return true
-
 }
 func matchBool(token string) bool {
 	return matchKeyword(token, "true") || matchKeyword(token, "false") || matchKeyword(token, "null")
