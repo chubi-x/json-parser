@@ -13,7 +13,7 @@ import (
 	"unicode/utf8"
 )
 
-func handleLexerError(errMsg string, err error) {
+func handleFileReadError(errMsg string, err error) {
 	if err != nil {
 		io.WriteString(os.Stderr, fmt.Sprintf("%s: %s \n", errMsg, err))
 		os.Exit(1)
