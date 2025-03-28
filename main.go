@@ -131,11 +131,14 @@ func Parse(tokens []string) (bool, error) {
 		}
 		return true, nil
 	} else if matchLeftSquareBrace(tokens[pos+1]) {
-		parseArray(tokens, &pos)
+		if _, err := parseArray(tokens, &pos, true); err != nil {
+			return false, err
+		}
+		return true, nil
 	}
+	nextToken(&pos)
 	return false, fmt.Errorf("Invalid JSON string. Expected { or [, got %s", tokens[pos])
 }
-
 
 func parseObject(tokens []string, pos *int, args ...bool) (bool, error) {
 	isOuterObject := false
