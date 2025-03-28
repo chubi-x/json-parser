@@ -136,9 +136,6 @@ func Parse(tokens []string) (bool, error) {
 	return false, fmt.Errorf("Invalid JSON string. Expected { or [, got %s", tokens[pos])
 }
 
-func nextToken(pos *int) {
-	*pos += 1
-}
 
 func parseObject(tokens []string, pos *int, args ...bool) (bool, error) {
 	isOuterObject := false
@@ -245,12 +242,8 @@ func parseString(tokens []string, pos *int) (bool, error) {
 	}
 	return true, nil
 }
-func parseArray(tokens []string, pos *int) (bool, error) {
+func nextToken(pos *int) {
 	*pos += 1
-	matchLeftSquareBrace(tokens[*pos])
-	// could be a string, number, object, or array
-	parseRightSquareBrace(tokens[*pos])
-	return true, nil
 }
 func matchColon(token string) bool {
 	return matchKeyword(token, ":")
