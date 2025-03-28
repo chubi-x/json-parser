@@ -146,41 +146,60 @@ func parseObject(tokens []string, pos *int, args ...bool) (bool, error) {
 
 	if matchRightCurlyBrace(tokens[*pos+1]) {
 		if matchComma(tokens[*pos]) {
-			return false, err(*pos, "token", "}")
+			return false, parserError(*pos, "token", "}")
 		}
-		nextToken(pos)
 		if isOuterObject {
-			if *pos != len(tokens)-1 {
-				return false, err(*pos, "EOF", tokens[*pos+1])
+			if *pos+1 != len(tokens)-1 {
+				return false, parserError(*pos, "EOF", tokens[*pos+1])
 			}
 		}
 		return true, nil
-	} else if !matchQuote(tokens[*pos+1]) {
-		return false, err(*pos, "\"", tokens[*pos+1])
+	} else if !matchQuote(tokens[*pos+1]) { // parse key
+		return false, parserError(*pos, "\"", tokens[*pos+1])
 	} else {
 		if _, err := parseString(tokens, pos); err != nil {
 			return false, err
 		}
 	}
 	if !matchColon(tokens[*pos+1]) {
-		return false, err(*pos, ":", tokens[*pos+1])
+		return false, parserError(*pos, ":", tokens[*pos+1])
 	}
 	nextToken(pos)
 	if _, err := parseValues(tokens, pos); err != nil {
 		return false, err
 	}
+	if *pos == len(tokens)-1 {
+		return false, parserError(*pos, ", or ]", "EOF")
+	}
+	if !matchComma(tokens[*pos+1]) {
+
+		if !matchRightCurlyBrace(tokens[*pos+1]) {
+			return false, parserError(*pos, "}", tokens[*pos+1])
+		}
+		return true, nil
+	}
+	if _, err := parseObject(tokens, pos); err != nil {
+		return false, err
+	}
+	return true, nil
+
+}
+
+// Parse out a string,object,number, or array
+func parseValues(tokens []string, pos *int) (bool, error) {
 	if matchNumber(tokens[*pos+1]) {
 		nextToken(pos)
 	} else if matchLeftCurlyBrace(tokens[*pos+1]) {
-		_, err := parseObject(tokens, pos)
-		if err != nil {
+
+		if _, err := parseObject(tokens, pos); err != nil {
 			return false, err
 		}
+		nextToken(pos)
 	} else if matchLeftSquareBrace(tokens[*pos+1]) {
-		_, err := parseArray(tokens, pos)
-		if err != nil {
+		if _, err := parseArray(tokens, pos); err != nil {
 			return false, err
 		}
+		nextToken(pos)
 	} else if matchQuote(tokens[*pos+1]) {
 		if _, err := parseString(tokens, pos); err != nil {
 			return false, err
@@ -188,53 +207,17 @@ func parseObject(tokens []string, pos *int, args ...bool) (bool, error) {
 	} else if matchBool(tokens[*pos+1]) {
 		nextToken(pos)
 	} else {
-		return false, err(*pos, "token", tokens[*pos+1])
+		return false, parserError(*pos, "token", tokens[*pos+1])
 	}
-	if !matchComma(tokens[*pos+1]) {
 
-		if !matchRightCurlyBrace(tokens[*pos+1]) {
-			return false, err(*pos, "}", tokens[*pos+1])
-		}
-		return true, nil
-	}
-	// }
-	_, err := parseObject(tokens, pos)
-	if err != nil {
-		return false, err
-	}
 	return true, nil
-
-	/* 1 if next token closing brace, update position and check is parent object
-		/    1.1 if isparentobject, assert that current token is the last token, if false return error
-		//return
-	/2 else if next token is not quote return false and error
-	/3 else update position. now current tkoen is is opening quote
-
-		4 if next token is not quote, update position. now we're at the string.
-		    if next token is not quote return false.
-		    update position. now were at closing quote.
-		5 else
-		    update position. now we're at closing quote.
-		6 if next token is not colon return error.
-		7 else update position. now we're at the colon.
-		8 if next token is number update position. now we're at the number
-		    else if next token is object, update position. trigger recursion.
-		   else if next token is LeftSquareBrace update position, call parse array
-		   else if next token is quote update position. now we're at opening quote.
-		      repeat steps 4-5.
-		9  else return error. expected either object, string, number, or array.
-		10 if next token is not comma
-		/      if next token is not closing brace return error.
-		//11  repeat steps 8-9
-	*/
 }
-
 func parseString(tokens []string, pos *int) (bool, error) {
 	nextToken(pos)
 	if !matchQuote(tokens[*pos+1]) {
 		nextToken(pos)
 		if !matchQuote(tokens[*pos+1]) {
-			return false, err(*pos, "\"", tokens[*pos])
+			return false, parserError(*pos, "\"", tokens[*pos])
 		}
 		nextToken(pos)
 	} else {
@@ -286,11 +269,12 @@ func matchKeyword(token string, keyword string) bool {
 	return false
 }
 
-func err(pos int, expected string, got string) error {
+func parserError(pos int, expected string, got string) error {
 	return fmt.Errorf("Error Parsing JSON at %d. Expected %s but got %s", pos, expected, got)
 }
 
 // lexing functions
+
 func isExponent(char rune) bool {
 	return (char == 'e' || char == 'E')
 }
