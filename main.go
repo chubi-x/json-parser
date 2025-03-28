@@ -126,8 +126,7 @@ func Parse(tokens []string) (bool, error) {
 		return false, fmt.Errorf("Expected tokens but found nil")
 	}
 	if matchLeftCurlyBrace(tokens[pos+1]) {
-		_, err := parseObject(tokens, &pos, true)
-		if err != nil {
+		if _, err := parseObject(tokens, &pos, true); err != nil {
 			return false, err
 		}
 		return true, nil
@@ -170,9 +169,9 @@ func parseObject(tokens []string, pos *int, args ...bool) (bool, error) {
 		return false, err(*pos, ":", tokens[*pos+1])
 	}
 	nextToken(pos)
-	//start a loop here
-	//match value
-	// for *pos < len(tokens) {
+	if _, err := parseValues(tokens, pos); err != nil {
+		return false, err
+	}
 	if matchNumber(tokens[*pos+1]) {
 		nextToken(pos)
 	} else if matchLeftCurlyBrace(tokens[*pos+1]) {
