@@ -185,6 +185,45 @@ func parseObject(tokens []string, pos *int, args ...bool) (bool, error) {
 
 }
 
+func parseArray(tokens []string, pos *int, args ...bool) (bool, error) {
+
+	isOuterArray := false
+	if len(args) > 0 {
+		isOuterArray = args[0]
+	}
+	nextToken(pos)
+
+	if matchRightSquareBrace(tokens[*pos+1]) {
+		if matchComma(tokens[*pos]) {
+			return false, parserError(*pos, "token", "]")
+		}
+		if isOuterArray {
+			if *pos+1 != len(tokens)-1 {
+				return false, parserError(*pos, "EOF", tokens[*pos+1])
+			}
+		}
+		return true, nil
+	}
+
+	if _, err := parseValues(tokens, pos); err != nil {
+		return false, err
+	}
+	if *pos == len(tokens)-1 {
+		return false, parserError(*pos, ", or ]", "EOF")
+	}
+	if !matchComma(tokens[*pos+1]) {
+
+		if !matchRightSquareBrace(tokens[*pos+1]) {
+			return false, parserError(*pos, "]", tokens[*pos+1])
+		}
+		return true, nil
+	}
+	if _, err := parseArray(tokens, pos); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // Parse out a string,object,number, or array
 func parseValues(tokens []string, pos *int) (bool, error) {
 	if matchNumber(tokens[*pos+1]) {
