@@ -23,8 +23,8 @@ func handleFileReadError(errMsg string, err error) {
 
 var fileName string
 
-func main() {
-	// use json mckenna format
+func readJson() *bytes.Buffer {
+
 	var buf *bytes.Buffer = bytes.NewBuffer(make([]byte, 0))
 	flag.StringVar(&fileName, "file", "", "Path to JSON file")
 	flag.Parse()
@@ -33,17 +33,25 @@ func main() {
 		openFile, err := os.Open(fileName)
 
 		_, copyErr := io.Copy(buf, openFile)
-		handleLexerError("Unable to read file ", err)
-		handleLexerError("Error opening file "+fileName, copyErr)
+		handleFileReadError("Unable to read file ", err)
+		handleFileReadError("Error opening file "+fileName, copyErr)
 		defer openFile.Close()
 	} else if jsonString := flag.Arg(0); jsonString == "" && fileName == "" {
 		_, err := io.Copy(buf, os.Stdin)
-		handleLexerError("Unable to read from Stdin", err)
+		handleFileReadError("Unable to read from Stdin", err)
 	} else {
 		buf = bytes.NewBufferString(jsonString)
 	}
-	tokens := Lex(buf)
-	fmt.Println(Parse(slices.Concat(tokens...)))
+	return buf
+}
+func main() {
+	// use json mckenna format
+	ParseJson()
+}
+func ParseJson() (bool, error) {
+	json := readJson()
+	tokens := Lex(json)
+	return Parse(slices.Concat(tokens...))
 }
 
 // Function to extract JSON tokens from a buffer
@@ -109,18 +117,15 @@ func Lex(buf *bytes.Buffer) [][]string {
 		saveToken(&token, &lineTokens, &prevToken)
 		tokens = append(tokens, lineTokens)
 	}
-	for i := 0; i < len(tokens); i++ {
-		fmt.Printf("Line: %#v \n", tokens[i])
-	}
 	return tokens
 }
 
-// in recursive descent parsers we write a method to match each "entity " in the string
-// we also have methods that implement a production rule in the grammar, so basically we need function to match:
-// keyword tokens, numbers, strings, objects, and arrays
-
 // Parse a given slice of already lexed tokens
 func Parse(tokens []string) (bool, error) {
+
+	// in recursive descent parsers we write a method to match each "entity " in the string
+	// we also have methods that implement a production rule in the grammar, so basically we need function to match:
+	// keyword tokens, numbers, strings, objects, and arrays
 	pos := -1
 	if len(tokens) == 0 {
 		return false, fmt.Errorf("Expected tokens but found nil")
