@@ -125,10 +125,6 @@ func Lex(buf *bytes.Buffer) [][]string {
 	return tokens
 }
 
-// Parse a given slice of already lexed tokens
-// instead of the cascadjng if statements and
-// functions to match evrry token just use a switch case to match the tokens directly. then run that in a loop
-// this way its less branching happening
 func Parse(tokens []string) (bool, error) {
 
 	// in recursive descent parsers we write a method to match each "entity " in the string
