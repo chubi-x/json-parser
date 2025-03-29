@@ -19,8 +19,8 @@ const (
 	LEFTCURLYBRACE   = "{"
 	RIGHTCURLYBRACE  = "}"
 	LEFTSQUAREBRACE  = "["
-	RIGHTSQUAREBRACE = "["
-	QUOTE            = ""
+	RIGHTSQUAREBRACE = "]"
+	QUOTE            = "\""
 	TRUE             = "true"
 	FALSE            = "false"
 	NULL             = "null"
@@ -288,26 +288,17 @@ func parseString(tokens []string, pos *int) (bool, error) {
 func nextToken(pos *int) {
 	*pos += 1
 }
-func matchColon(token string) bool {
-	return matchKeyword(token, ":")
-}
-func matchLeftCurlyBrace(token string) bool {
-	return matchKeyword(token, "{")
+func matchRightSquareBrace(token string) bool {
+	return matchKeyword(token, RIGHTSQUAREBRACE)
 }
 func matchRightCurlyBrace(token string) bool {
-	return matchKeyword(token, "}")
-}
-func matchLeftSquareBrace(token string) bool {
-	return matchKeyword(token, "[")
-}
-func matchRightSquareBrace(token string) bool {
-	return matchKeyword(token, "]")
+	return matchKeyword(token, RIGHTCURLYBRACE)
 }
 func matchComma(token string) bool {
-	return matchKeyword(token, ",")
+	return matchKeyword(token, COMMA)
 }
 func matchQuote(token string) bool {
-	return matchKeyword(token, "\"")
+	return matchKeyword(token, QUOTE)
 }
 func matchNumber(token string) bool {
 	_, intErr := strconv.ParseInt(token, 10, 64)
@@ -316,9 +307,6 @@ func matchNumber(token string) bool {
 		return false
 	}
 	return true
-}
-func matchBool(token string) bool {
-	return matchKeyword(token, "true") || matchKeyword(token, "false") || matchKeyword(token, "null")
 }
 
 func matchKeyword(token string, keyword string) bool {
