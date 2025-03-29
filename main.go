@@ -13,14 +13,6 @@ import (
 	"unicode/utf8"
 )
 
-func handleFileReadError(errMsg string, err error) {
-	if err != nil {
-		io.WriteString(os.Stderr, fmt.Sprintf("%s: %s \n", errMsg, err))
-		os.Exit(1)
-	}
-
-}
-
 var fileName string
 
 const (
@@ -350,6 +342,13 @@ func saveToken(token *string, lineTokens *[]string, prevToken *string) {
 		*lineTokens = append(*lineTokens, *token)
 		*prevToken = *token
 		*token = ""
+	}
+
+}
+func handleFileReadError(errMsg string, err error) {
+	if err != nil {
+		io.WriteString(os.Stderr, fmt.Sprintf("%s: %s \n", errMsg, err))
+		os.Exit(1)
 	}
 
 }
