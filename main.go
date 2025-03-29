@@ -134,14 +134,22 @@ func Parse(tokens []string) (bool, error) {
 	if len(tokens) == 0 {
 		return false, fmt.Errorf("Expected tokens but found nil")
 	}
+	lastToken := tokens[len(tokens)-1]
 	switch tokens[pos+1] {
 	case LEFTCURLYBRACE:
-		if _, err := parseObject(tokens, &pos, true); err != nil {
+		if lastToken != RIGHTCURLYBRACE {
+			return false, parserError(len(tokens)-1, "}", lastToken)
+		}
+		if _, err := parseObject(tokens, &pos); err != nil {
 			return false, err
 		}
 		return true, nil
 	case LEFTSQUAREBRACE:
-		if _, err := parseArray(tokens, &pos, true); err != nil {
+
+		if lastToken != RIGHTSQUAREBRACE {
+			return false, parserError(len(tokens)-1, "}", lastToken)
+		}
+		if _, err := parseArray(tokens, &pos); err != nil {
 			return false, err
 		}
 		return true, nil
@@ -151,121 +159,101 @@ func Parse(tokens []string) (bool, error) {
 	return false, fmt.Errorf("Invalid JSON string. Expected { or [, got %s", tokens[pos])
 }
 
-func parseObject(tokens []string, pos *int, args ...bool) (bool, error) {
-	isOuterObject := false
-	if len(args) > 0 {
-		isOuterObject = args[0]
-	}
-	nextToken(pos)
+func parseObject(tokens []string, pos *int) (bool, error) {
 
-	if matchRightCurlyBrace(tokens[*pos+1]) {
-		if matchComma(tokens[*pos]) {
-			return false, parserError(*pos, "token", "}")
+	for {
+		nextToken(pos)
+		if *pos == len(tokens)-1 {
+			return false, parserError(*pos, "}", "EOF")
 		}
-		if isOuterObject {
-			if *pos+1 != len(tokens)-1 {
-				return false, parserError(*pos, "EOF", tokens[*pos+1])
+		switch tokens[*pos+1] {
+
+		case RIGHTCURLYBRACE:
+			if matchComma(tokens[*pos]) {
+				return false, parserError(*pos, "token", "}")
 			}
+			return true, nil
+		case QUOTE:
+			if _, err := parseString(tokens, pos); err != nil {
+				return false, err
+			}
+			nextToken(pos)
+		default:
+			return false, parserError(*pos, "\"", tokens[*pos+1])
 		}
-		return true, nil
-	} else if !matchQuote(tokens[*pos+1]) { // parse key
-		return false, parserError(*pos, "\"", tokens[*pos+1])
-	} else {
-		if _, err := parseString(tokens, pos); err != nil {
+		if tokens[*pos+1] != COLON {
+			return false, parserError(*pos, ":", tokens[*pos+1])
+		}
+		nextToken(pos)
+		if _, err := parseValues(tokens, pos); err != nil {
 			return false, err
 		}
-	}
-	if !matchColon(tokens[*pos+1]) {
-		return false, parserError(*pos, ":", tokens[*pos+1])
-	}
-	nextToken(pos)
-	if _, err := parseValues(tokens, pos); err != nil {
-		return false, err
-	}
-	if *pos == len(tokens)-1 {
-		return false, parserError(*pos, ", or ]", "EOF")
-	}
-	if !matchComma(tokens[*pos+1]) {
-
-		if !matchRightCurlyBrace(tokens[*pos+1]) {
-			return false, parserError(*pos, "}", tokens[*pos+1])
-		}
 		if *pos == len(tokens)-1 {
-			return true, nil
+			return false, parserError(*pos, ", or }", "EOF")
 		}
+		if !matchComma(tokens[*pos+1]) {
 
+			if !matchRightCurlyBrace(tokens[*pos+1]) {
+				return false, parserError(*pos, "}", tokens[*pos+1])
+			}
+			return true, nil
+
+		}
 	}
-	if _, err := parseObject(tokens, pos); err != nil {
-		return false, err
-	}
-	return true, nil
 
 }
 
-func parseArray(tokens []string, pos *int, args ...bool) (bool, error) {
+func parseArray(tokens []string, pos *int) (bool, error) {
 
-	isOuterArray := false
-	if len(args) > 0 {
-		isOuterArray = args[0]
-	}
-	nextToken(pos)
+	for {
+		nextToken(pos)
 
-	if matchRightSquareBrace(tokens[*pos+1]) {
-		if matchComma(tokens[*pos]) {
-			return false, parserError(*pos, "token", "]")
-		}
-		if isOuterArray {
-			if *pos+1 != len(tokens)-1 {
-				return false, parserError(*pos, "EOF", tokens[*pos+1])
+		if matchRightSquareBrace(tokens[*pos+1]) {
+			if matchComma(tokens[*pos]) {
+				return false, parserError(*pos, "token", "]")
 			}
-		}
-		return true, nil
-	}
 
-	if _, err := parseValues(tokens, pos); err != nil {
-		return false, err
-	}
-	if *pos == len(tokens)-1 {
-		return false, parserError(*pos, ", or ]", "EOF")
-	}
-	if !matchComma(tokens[*pos+1]) {
-
-		if !matchRightSquareBrace(tokens[*pos+1]) {
-			return false, parserError(*pos, "]", tokens[*pos+1])
+			return true, nil
 		}
-		return true, nil
+
+		if _, err := parseValues(tokens, pos); err != nil {
+			return false, err
+		}
+		if *pos == len(tokens)-1 {
+			return false, parserError(*pos, ", or ]", "EOF")
+		}
+		if !matchComma(tokens[*pos+1]) {
+
+			if !matchRightSquareBrace(tokens[*pos+1]) {
+				return false, parserError(*pos, "]", tokens[*pos+1])
+			}
+			return true, nil
+		}
 	}
-	if _, err := parseArray(tokens, pos); err != nil {
-		return false, err
-	}
-	return true, nil
 }
 
 // Parse out a string,object,number, or array
 func parseValues(tokens []string, pos *int) (bool, error) {
-	if matchNumber(tokens[*pos+1]) {
-		nextToken(pos)
-	} else if matchLeftCurlyBrace(tokens[*pos+1]) {
-
+	switch tokens[*pos+1] {
+	case LEFTCURLYBRACE:
 		if _, err := parseObject(tokens, pos); err != nil {
 			return false, err
 		}
-		nextToken(pos)
-	} else if matchLeftSquareBrace(tokens[*pos+1]) {
+	case LEFTSQUAREBRACE:
 		if _, err := parseArray(tokens, pos); err != nil {
 			return false, err
 		}
-		nextToken(pos)
-	} else if matchQuote(tokens[*pos+1]) {
+	case QUOTE:
 		if _, err := parseString(tokens, pos); err != nil {
 			return false, err
 		}
-	} else if matchBool(tokens[*pos+1]) {
-		nextToken(pos)
-	} else {
-		return false, parserError(*pos, "token", tokens[*pos+1])
+	case TRUE, FALSE, NULL:
+	default:
+		if !matchNumber(tokens[*pos+1]) {
+			return false, parserError(*pos, "token", tokens[*pos+1])
+		}
 	}
-
+	nextToken(pos)
 	return true, nil
 }
 func parseString(tokens []string, pos *int) (bool, error) {
@@ -275,9 +263,6 @@ func parseString(tokens []string, pos *int) (bool, error) {
 		if !matchQuote(tokens[*pos+1]) {
 			return false, parserError(*pos, "\"", tokens[*pos])
 		}
-		nextToken(pos)
-	} else {
-		nextToken(pos)
 	}
 	return true, nil
 }
