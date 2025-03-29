@@ -1,0 +1,11 @@
+{
+  "hey": " null",
+  "how far": "i dey",
+  "key2": "time",
+  "obj": {
+    "k1": "hey",
+    "k2": "there",
+    "k4": 2e10,
+    "k3": [1, 2, 3]
+  }
+}
