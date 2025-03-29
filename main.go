@@ -23,6 +23,19 @@ func handleFileReadError(errMsg string, err error) {
 
 var fileName string
 
+const (
+	LEFTCURLYBRACE   = "{"
+	RIGHTCURLYBRACE  = "}"
+	LEFTSQUAREBRACE  = "["
+	RIGHTSQUAREBRACE = "["
+	QUOTE            = ""
+	TRUE             = "true"
+	FALSE            = "false"
+	NULL             = "null"
+	COLON            = ":"
+	COMMA            = ","
+)
+
 func readJson() *bytes.Buffer {
 
 	var buf *bytes.Buffer = bytes.NewBuffer(make([]byte, 0))
@@ -133,16 +146,18 @@ func Parse(tokens []string) (bool, error) {
 	if len(tokens) == 0 {
 		return false, fmt.Errorf("Expected tokens but found nil")
 	}
-	if matchLeftCurlyBrace(tokens[pos+1]) {
+	switch tokens[pos+1] {
+	case LEFTCURLYBRACE:
 		if _, err := parseObject(tokens, &pos, true); err != nil {
 			return false, err
 		}
 		return true, nil
-	} else if matchLeftSquareBrace(tokens[pos+1]) {
+	case LEFTSQUAREBRACE:
 		if _, err := parseArray(tokens, &pos, true); err != nil {
 			return false, err
 		}
 		return true, nil
+
 	}
 	nextToken(&pos)
 	return false, fmt.Errorf("Invalid JSON string. Expected { or [, got %s", tokens[pos])
@@ -187,7 +202,10 @@ func parseObject(tokens []string, pos *int, args ...bool) (bool, error) {
 		if !matchRightCurlyBrace(tokens[*pos+1]) {
 			return false, parserError(*pos, "}", tokens[*pos+1])
 		}
-		return true, nil
+		if *pos == len(tokens)-1 {
+			return true, nil
+		}
+
 	}
 	if _, err := parseObject(tokens, pos); err != nil {
 		return false, err
