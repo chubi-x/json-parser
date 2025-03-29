@@ -163,9 +163,6 @@ func parseObject(tokens []string, pos *int) (bool, error) {
 
 	for {
 		nextToken(pos)
-		if *pos == len(tokens)-1 {
-			return false, parserError(*pos, "}", "EOF")
-		}
 		switch tokens[*pos+1] {
 
 		case RIGHTCURLYBRACE:
