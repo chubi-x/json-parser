@@ -52,7 +52,7 @@ func TestInvalid(t *testing.T) {
 }
 func TestValid(t *testing.T) {
 
-	for _, json := range invalidFiles {
+	for _, json := range validFiles {
 
 		buf := bytes.NewBuffer(make([]byte, 0))
 		io.Copy(buf, json.file)
