@@ -183,27 +183,35 @@ func parseObject(tokens []string, pos *int, isOuterObject bool) (bool, error) {
 		if _, err := parseValues(tokens, pos); err != nil {
 			return false, err
 		}
-		if *pos == len(tokens)-1 {
-			return false, parserError(*pos, ", or }", "EOF")
-		}
-		if !matchComma(tokens[*pos+1]) {
-
-			if !matchRightCurlyBrace(tokens[*pos+1]) {
-				return false, parserError(*pos, "}", tokens[*pos+1])
-			}
-			return true, nil
-
+		if ret, err := parseValueEnding(tokens[*pos+1], RIGHTCURLYBRACE, *pos+1, isOuterObject, len(tokens)); ret || err != nil {
+			return ret, err
 		}
 	}
 
 }
 
-func parseArray(tokens []string, pos *int) (bool, error) {
+// Parses the tokens before a comma in an object or array.
+//
+// Returns: bool specifying whether to return from calling function and Error value
+func parseValueEnding(currentToken string, TOKEN string, pos int, isParent bool, tokensLength int) (bool, error) {
+
+	if currentToken != COMMA {
+		if currentToken != TOKEN {
+			return false, parserError(pos, TOKEN, currentToken)
+		}
+		if isParent && pos != tokensLength-1 {
+			return false, parserError(pos, "EOF", currentToken)
+		}
+		return true, nil // at this point we want to stop parsing the object or array
+	}
+	return false, nil
+}
+func parseArray(tokens []string, pos *int, isOuterArray bool) (bool, error) {
 
 	for {
 		nextToken(pos)
 
-		if matchRightSquareBrace(tokens[*pos+1]) {
+		if tokens[*pos+1] == RIGHTSQUAREBRACE {
 			if matchComma(tokens[*pos]) {
 				return false, parserError(*pos, "token", "]")
 			}
@@ -214,15 +222,8 @@ func parseArray(tokens []string, pos *int) (bool, error) {
 		if _, err := parseValues(tokens, pos); err != nil {
 			return false, err
 		}
-		if *pos == len(tokens)-1 {
-			return false, parserError(*pos, ", or ]", "EOF")
-		}
-		if !matchComma(tokens[*pos+1]) {
-
-			if !matchRightSquareBrace(tokens[*pos+1]) {
-				return false, parserError(*pos, "]", tokens[*pos+1])
-			}
-			return true, nil
+		if ret, err := parseValueEnding(tokens[*pos+1], RIGHTSQUAREBRACE, *pos+1, isOuterArray, len(tokens)); ret || err != nil {
+			return ret, err
 		}
 	}
 }
