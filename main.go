@@ -13,8 +13,6 @@ import (
 	"unicode/utf8"
 )
 
-var fileName string
-
 const (
 	LEFTCURLYBRACE   = "{"
 	RIGHTCURLYBRACE  = "}"
@@ -30,6 +28,7 @@ const (
 
 func readJson() *bytes.Buffer {
 
+	var fileName string
 	var buf *bytes.Buffer = bytes.NewBuffer(make([]byte, 0))
 	flag.StringVar(&fileName, "file", "", "Path to JSON file")
 	flag.Parse()
