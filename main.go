@@ -139,7 +139,7 @@ func Parse(tokens []string) (bool, error) {
 		if lastToken != RIGHTCURLYBRACE {
 			return false, parserError(len(tokens)-1, "}", lastToken)
 		}
-		if _, err := parseObject(tokens, &pos); err != nil {
+		if _, err := parseObject(tokens, &pos, true); err != nil {
 			return false, err
 		}
 		return true, nil
@@ -148,7 +148,7 @@ func Parse(tokens []string) (bool, error) {
 		if lastToken != RIGHTSQUAREBRACE {
 			return false, parserError(len(tokens)-1, "}", lastToken)
 		}
-		if _, err := parseArray(tokens, &pos); err != nil {
+		if _, err := parseArray(tokens, &pos, true); err != nil {
 			return false, err
 		}
 		return true, nil
@@ -158,12 +158,11 @@ func Parse(tokens []string) (bool, error) {
 	return false, fmt.Errorf("Invalid JSON string. Expected { or [, got %s", tokens[pos])
 }
 
-func parseObject(tokens []string, pos *int) (bool, error) {
+func parseObject(tokens []string, pos *int, isOuterObject bool) (bool, error) {
 
 	for {
 		nextToken(pos)
 		switch tokens[*pos+1] {
-
 		case RIGHTCURLYBRACE:
 			if matchComma(tokens[*pos]) {
 				return false, parserError(*pos, "token", "}")
@@ -232,11 +231,11 @@ func parseArray(tokens []string, pos *int) (bool, error) {
 func parseValues(tokens []string, pos *int) (bool, error) {
 	switch tokens[*pos+1] {
 	case LEFTCURLYBRACE:
-		if _, err := parseObject(tokens, pos); err != nil {
+		if _, err := parseObject(tokens, pos, false); err != nil {
 			return false, err
 		}
 	case LEFTSQUAREBRACE:
-		if _, err := parseArray(tokens, pos); err != nil {
+		if _, err := parseArray(tokens, pos, false); err != nil {
 			return false, err
 		}
 	case QUOTE:
