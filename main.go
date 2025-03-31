@@ -50,12 +50,12 @@ func readJson() *bytes.Buffer {
 }
 func main() {
 	// use json mckenna format
-	ParseJson()
+	fmt.Println(ParseJson())
 }
 func ParseJson() (bool, error) {
 	json := readJson()
-	tokens := Lex(json)
-	return Parse(slices.Concat(tokens...))
+	tokens := slices.Concat(Lex(json)...)
+	return Parse(tokens)
 }
 
 // Function to extract JSON tokens from a buffer
