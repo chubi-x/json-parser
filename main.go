@@ -172,10 +172,10 @@ func parseObject(tokens []string, pos *int, isOuterObject bool) (bool, error) {
 			if _, err := parseString(tokens, pos); err != nil {
 				return false, err
 			}
-			nextToken(pos)
 		default:
 			return false, parserError(*pos, "\"", tokens[*pos+1])
 		}
+		nextToken(pos)
 		if tokens[*pos+1] != COLON {
 			return false, parserError(*pos, ":", tokens[*pos+1])
 		}
