@@ -77,6 +77,7 @@ func Lex(buf *bytes.Buffer) [][]string {
 		for runeScanner.Scan() {
 			scannedBytes := runeScanner.Bytes()
 			char, _ := utf8.DecodeRune(scannedBytes)
+			prevTokenIsQuote := prevToken == "\""
 			if char == '"' && !isLexingString {
 				isLexingString = true
 			}
@@ -86,16 +87,18 @@ func Lex(buf *bytes.Buffer) [][]string {
 				saveToken(&token, &lineTokens, &prevToken)
 				continue
 			}
-			prevTokenIsQuote := prevToken == "\""
-			//stop lexing key string after reaching end quote
-			if char == ':' && prevTokenIsQuote {
-				isLexingString = false
-			}
 			// save value string token when we reach closing quote. handles escaped quotes
 			// TODO: This a naive implementation as it doesn't cover the edge case where the string "\\" is read as one token instead of 3
 			if isLexingString && char == '"' && prevChar != rune(0) && prevChar != '\\' && prevTokenIsQuote {
 				isLexingString = false
 				saveToken(&token, &lineTokens, &prevToken)
+				token += string(char)
+				prevChar = char
+				continue
+			}
+			//stop lexing key string after reaching end quote
+			if char == ':' && prevTokenIsQuote {
+				isLexingString = false
 			}
 			isNegative := prevChar == '-' && unicode.IsNumber(char)
 			if !isLexingString && (isNegative || unicode.IsNumber(char)) {
@@ -107,6 +110,9 @@ func Lex(buf *bytes.Buffer) [][]string {
 			if isLexingNumber && !isLexingFloat && !isLexingExponent && !isLexingExponentSign && !unicode.IsNumber(char) {
 				isLexingNumber = false
 				saveToken(&token, &lineTokens, &prevToken)
+				token += string(char)
+				prevChar = char
+				continue
 			}
 			// only save static tokens that are not part of a string
 			// De Morgan's Law to the rescue. second condition was previously !(token !="\"" && isLexingString && prevTokenIsQuote)
