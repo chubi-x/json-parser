@@ -13,6 +13,16 @@ import (
 	"unicode/utf8"
 )
 
+type lexnexttokenparams struct {
+	lineTokens       *[]string
+	token            *string
+	prevToken        *string
+	prevChar         *rune
+	char             *rune
+	isLexingString   *bool
+	prevTokenIsQuote *bool
+}
+
 const (
 	LEFTCURLYBRACE   = "{"
 	RIGHTCURLYBRACE  = "}"
@@ -25,6 +35,8 @@ const (
 	COLON            = ":"
 	COMMA            = ","
 )
+
+var staticTokens = []string{LEFTCURLYBRACE, RIGHTCURLYBRACE, LEFTSQUAREBRACE, RIGHTSQUAREBRACE, QUOTE, COLON, TRUE, FALSE, NULL, COMMA}
 
 func readJson() *bytes.Buffer {
 
@@ -64,7 +76,6 @@ func Lex(buf *bytes.Buffer) [][]string {
 	lineScanner := bufio.NewScanner(bytes.NewReader(buf.Bytes()))
 	lineScanner.Split(bufio.ScanLines)
 	tokens := [][]string{}
-	staticTokens := []string{"{", "}", ":", ",", "\"", "[", "]", "true", "false", "null"}
 	for lineScanner.Scan() {
 		runeScanner := bufio.NewScanner(bytes.NewReader(lineScanner.Bytes()))
 		runeScanner.Split(bufio.ScanRunes)
@@ -91,37 +102,30 @@ func Lex(buf *bytes.Buffer) [][]string {
 			// TODO: This a naive implementation as it doesn't cover the edge case where the string "\\" is read as one token instead of 3
 			if isLexingString && char == '"' && prevChar != rune(0) && prevChar != '\\' && prevTokenIsQuote {
 				isLexingString = false
-				saveToken(&token, &lineTokens, &prevToken)
-				token += string(char)
-				prevChar = char
+				lexNextToken(true, lexnexttokenparams{&lineTokens, &token, &prevToken, &prevChar, &char, &isLexingString, &prevTokenIsQuote})
 				continue
 			}
 			//stop lexing key string after reaching end quote
 			if char == ':' && prevTokenIsQuote {
 				isLexingString = false
+				lexNextToken(false, lexnexttokenparams{&lineTokens, &token, &prevToken, &prevChar, &char, &isLexingString, &prevTokenIsQuote})
+				continue
 			}
 			isNegative := prevChar == '-' && unicode.IsNumber(char)
 			if !isLexingString && (isNegative || unicode.IsNumber(char)) {
 				isLexingNumber = true
+				lexNextToken(false, lexnexttokenparams{&lineTokens, &token, &prevToken, &prevChar, &char, &isLexingString, &prevTokenIsQuote})
+				continue
 			}
 			isLexingFloat := char == '.'
 			isLexingExponent := isExponent(char)
 			isLexingExponentSign := isExponent(prevChar) && (char == '+' || char == '-')
 			if isLexingNumber && !isLexingFloat && !isLexingExponent && !isLexingExponentSign && !unicode.IsNumber(char) {
 				isLexingNumber = false
-				saveToken(&token, &lineTokens, &prevToken)
-				token += string(char)
-				prevChar = char
+				lexNextToken(true, lexnexttokenparams{&lineTokens, &token, &prevToken, &prevChar, &char, &isLexingString, &prevTokenIsQuote})
 				continue
 			}
-			// only save static tokens that are not part of a string
-			// De Morgan's Law to the rescue. second condition was previously !(token !="\"" && isLexingString && prevTokenIsQuote)
-			if slices.Contains(staticTokens, token) && (token == "\"" || !isLexingString || !prevTokenIsQuote) {
-				saveToken(&token, &lineTokens, &prevToken)
-			}
-			token += string(char)
-			prevChar = char
-
+			lexNextToken(false, lexnexttokenparams{&lineTokens, &token, &prevToken, &prevChar, &char, &isLexingString, &prevTokenIsQuote})
 		}
 		// save the last token that was accumulated
 		saveToken(&token, &lineTokens, &prevToken)
@@ -130,6 +134,17 @@ func Lex(buf *bytes.Buffer) [][]string {
 	return tokens
 }
 
+// only save static tokens that are not part of a string.
+// updates token and prevChar
+func lexNextToken(saveNonStaticToken bool, params lexnexttokenparams) {
+	// De Morgan's Law to the rescue. second condition was previously !(token !="\"" && isLexingString && prevTokenIsQuote)
+	isStaticToken := slices.Contains(staticTokens, *params.token) && (*params.token == "\"" || !*params.isLexingString || !*params.prevTokenIsQuote)
+	if isStaticToken || saveNonStaticToken {
+		saveToken(params.token, params.lineTokens, params.prevToken)
+	}
+	*params.token += string(*params.char)
+	*params.prevChar = *params.char
+}
 func Parse(tokens []string) (bool, error) {
 
 	// in recursive descent parsers we write a method to match each "entity " in the string
