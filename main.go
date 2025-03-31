@@ -265,12 +265,6 @@ func parseString(tokens []string, pos *int) (bool, error) {
 func nextToken(pos *int) {
 	*pos += 1
 }
-func matchRightSquareBrace(token string) bool {
-	return matchKeyword(token, RIGHTSQUAREBRACE)
-}
-func matchRightCurlyBrace(token string) bool {
-	return matchKeyword(token, RIGHTCURLYBRACE)
-}
 func matchComma(token string) bool {
 	return matchKeyword(token, COMMA)
 }
