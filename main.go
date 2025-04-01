@@ -67,7 +67,7 @@ func main() {
 func ParseJson() (bool, error) {
 	json := readJson()
 	tokens := slices.Concat(Lex(json)...)
-	return Parse(tokens)
+	return Parse(&tokens)
 }
 
 // Function to extract JSON tokens from a buffer
@@ -145,20 +145,20 @@ func lexNextToken(saveNonStaticToken bool, params lexnexttokenparams) {
 	*params.token += string(*params.char)
 	*params.prevChar = *params.char
 }
-func Parse(tokens []string) (bool, error) {
+func Parse(tokens *[]string) (bool, error) {
 
 	// in recursive descent parsers we write a method to match each "entity " in the string
 	// we also have methods that implement a production rule in the grammar, so basically we need function to match:
 	// keyword tokens, numbers, strings, objects, and arrays
 	pos := -1
-	if len(tokens) == 0 {
+	if len(*tokens) == 0 {
 		return false, fmt.Errorf("Expected tokens but found nil")
 	}
-	lastToken := tokens[len(tokens)-1]
-	switch tokens[pos+1] {
+	lastToken := (*tokens)[len(*tokens)-1]
+	switch (*tokens)[pos+1] {
 	case LEFTCURLYBRACE:
 		if lastToken != RIGHTCURLYBRACE {
-			return false, parserError(len(tokens)-1, "}", lastToken)
+			return false, parserError(len(*tokens)-1, "}", lastToken)
 		}
 		if _, err := parseObject(tokens, &pos, true); err != nil {
 			return false, err
@@ -167,7 +167,7 @@ func Parse(tokens []string) (bool, error) {
 	case LEFTSQUAREBRACE:
 
 		if lastToken != RIGHTSQUAREBRACE {
-			return false, parserError(len(tokens)-1, "}", lastToken)
+			return false, parserError(len(*tokens)-1, "}", lastToken)
 		}
 		if _, err := parseArray(tokens, &pos, true); err != nil {
 			return false, err
@@ -176,16 +176,15 @@ func Parse(tokens []string) (bool, error) {
 
 	}
 	updatePos(&pos)
-	return false, fmt.Errorf("Invalid JSON string. Expected { or [, got %s", tokens[pos])
+	return false, fmt.Errorf("Invalid JSON string. Expected { or [, got %s", (*tokens)[pos])
 }
-
-func parseObject(tokens []string, pos *int, isOuterObject bool) (bool, error) {
+func parseObject(tokens *[]string, pos *int, isOuterObject bool) (bool, error) {
 
 	for {
 		updatePos(pos)
-		switch tokens[*pos+1] {
+		switch (*tokens)[*pos+1] {
 		case RIGHTCURLYBRACE:
-			if matchComma(tokens[*pos]) {
+			if matchComma((*tokens)[*pos]) {
 				return false, parserError(*pos, "token", "}")
 			}
 			return true, nil
@@ -194,17 +193,17 @@ func parseObject(tokens []string, pos *int, isOuterObject bool) (bool, error) {
 				return false, err
 			}
 		default:
-			return false, parserError(*pos, "\"", tokens[*pos+1])
+			return false, parserError(*pos, "\"", (*tokens)[*pos+1])
 		}
 		updatePos(pos)
-		if tokens[*pos+1] != COLON {
-			return false, parserError(*pos, ":", tokens[*pos+1])
+		if (*tokens)[*pos+1] != COLON {
+			return false, parserError(*pos, ":", (*tokens)[*pos+1])
 		}
 		updatePos(pos)
 		if _, err := parseValues(tokens, pos); err != nil {
 			return false, err
 		}
-		if ret, err := parseValueEnding(tokens[*pos+1], RIGHTCURLYBRACE, *pos+1, isOuterObject, len(tokens)); ret || err != nil {
+		if ret, err := parseValueEnding((*tokens)[*pos+1], RIGHTCURLYBRACE, *pos+1, isOuterObject, len(*tokens)); ret || err != nil {
 			return ret, err
 		}
 	}
@@ -227,13 +226,13 @@ func parseValueEnding(currentToken string, TOKEN string, pos int, isParent bool,
 	}
 	return false, nil
 }
-func parseArray(tokens []string, pos *int, isOuterArray bool) (bool, error) {
+func parseArray(tokens *[]string, pos *int, isOuterArray bool) (bool, error) {
 
 	for {
 		updatePos(pos)
 
-		if tokens[*pos+1] == RIGHTSQUAREBRACE {
-			if matchComma(tokens[*pos]) {
+		if (*tokens)[*pos+1] == RIGHTSQUAREBRACE {
+			if matchComma((*tokens)[*pos]) {
 				return false, parserError(*pos, "token", "]")
 			}
 
@@ -243,15 +242,15 @@ func parseArray(tokens []string, pos *int, isOuterArray bool) (bool, error) {
 		if _, err := parseValues(tokens, pos); err != nil {
 			return false, err
 		}
-		if ret, err := parseValueEnding(tokens[*pos+1], RIGHTSQUAREBRACE, *pos+1, isOuterArray, len(tokens)); ret || err != nil {
+		if ret, err := parseValueEnding((*tokens)[*pos+1], RIGHTSQUAREBRACE, *pos+1, isOuterArray, len(*tokens)); ret || err != nil {
 			return ret, err
 		}
 	}
 }
 
 // Parse out a string,object,number, or array
-func parseValues(tokens []string, pos *int) (bool, error) {
-	switch tokens[*pos+1] {
+func parseValues(tokens *[]string, pos *int) (bool, error) {
+	switch (*tokens)[*pos+1] {
 	case LEFTCURLYBRACE:
 		if _, err := parseObject(tokens, pos, false); err != nil {
 			return false, err
@@ -266,19 +265,19 @@ func parseValues(tokens []string, pos *int) (bool, error) {
 		}
 	case TRUE, FALSE, NULL:
 	default:
-		if !matchNumber(tokens[*pos+1]) {
-			return false, parserError(*pos, "token", tokens[*pos+1])
+		if !matchNumber((*tokens)[*pos+1]) {
+			return false, parserError(*pos, "token", (*tokens)[*pos+1])
 		}
 	}
 	updatePos(pos)
 	return true, nil
 }
-func parseString(tokens []string, pos *int) (bool, error) {
+func parseString(tokens *[]string, pos *int) (bool, error) {
 	updatePos(pos)
-	if !matchQuote(tokens[*pos+1]) {
+	if !matchQuote((*tokens)[*pos+1]) {
 		updatePos(pos)
-		if !matchQuote(tokens[*pos+1]) {
-			return false, parserError(*pos, "\"", tokens[*pos])
+		if !matchQuote((*tokens)[*pos+1]) {
+			return false, parserError(*pos, "\"", (*tokens)[*pos])
 		}
 	}
 	return true, nil
