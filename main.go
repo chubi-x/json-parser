@@ -175,14 +175,14 @@ func Parse(tokens []string) (bool, error) {
 		return true, nil
 
 	}
-	nextToken(&pos)
+	updatePos(&pos)
 	return false, fmt.Errorf("Invalid JSON string. Expected { or [, got %s", tokens[pos])
 }
 
 func parseObject(tokens []string, pos *int, isOuterObject bool) (bool, error) {
 
 	for {
-		nextToken(pos)
+		updatePos(pos)
 		switch tokens[*pos+1] {
 		case RIGHTCURLYBRACE:
 			if matchComma(tokens[*pos]) {
@@ -196,11 +196,11 @@ func parseObject(tokens []string, pos *int, isOuterObject bool) (bool, error) {
 		default:
 			return false, parserError(*pos, "\"", tokens[*pos+1])
 		}
-		nextToken(pos)
+		updatePos(pos)
 		if tokens[*pos+1] != COLON {
 			return false, parserError(*pos, ":", tokens[*pos+1])
 		}
-		nextToken(pos)
+		updatePos(pos)
 		if _, err := parseValues(tokens, pos); err != nil {
 			return false, err
 		}
@@ -230,7 +230,7 @@ func parseValueEnding(currentToken string, TOKEN string, pos int, isParent bool,
 func parseArray(tokens []string, pos *int, isOuterArray bool) (bool, error) {
 
 	for {
-		nextToken(pos)
+		updatePos(pos)
 
 		if tokens[*pos+1] == RIGHTSQUAREBRACE {
 			if matchComma(tokens[*pos]) {
@@ -270,20 +270,20 @@ func parseValues(tokens []string, pos *int) (bool, error) {
 			return false, parserError(*pos, "token", tokens[*pos+1])
 		}
 	}
-	nextToken(pos)
+	updatePos(pos)
 	return true, nil
 }
 func parseString(tokens []string, pos *int) (bool, error) {
-	nextToken(pos)
+	updatePos(pos)
 	if !matchQuote(tokens[*pos+1]) {
-		nextToken(pos)
+		updatePos(pos)
 		if !matchQuote(tokens[*pos+1]) {
 			return false, parserError(*pos, "\"", tokens[*pos])
 		}
 	}
 	return true, nil
 }
-func nextToken(pos *int) {
+func updatePos(pos *int) {
 	*pos += 1
 }
 func matchComma(token string) bool {
