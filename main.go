@@ -139,7 +139,7 @@ func Lex(buf *bytes.Buffer) [][]string {
 func lexNextToken(saveNonStaticToken bool, params lexnexttokenparams) {
 	// De Morgan's Law to the rescue. second condition was previously !(token !="\"" && isLexingString && prevTokenIsQuote)
 	isStaticToken := slices.Contains(staticTokens, *params.token) && (*params.token == "\"" || !*params.isLexingString || !*params.prevTokenIsQuote)
-	if isStaticToken || saveNonStaticToken {
+	if saveNonStaticToken || isStaticToken {
 		saveToken(params.token, params.lineTokens, params.prevToken)
 	}
 	*params.token += string(*params.char)
