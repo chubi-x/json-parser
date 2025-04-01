@@ -61,10 +61,9 @@ func readJson() *bytes.Buffer {
 	return buf
 }
 func main() {
-	// use json mckenna format
 	fmt.Println(ParseJson())
 }
-func ParseJson() (bool, error) {
+func ParseJson() error {
 	json := readJson()
 	tokens := slices.Concat(Lex(json)...)
 	return Parse(&tokens)
@@ -145,38 +144,38 @@ func lexNextToken(saveNonStaticToken bool, params lexnexttokenparams) {
 	*params.token += string(*params.char)
 	*params.prevChar = *params.char
 }
-func Parse(tokens *[]string) (bool, error) {
+func Parse(tokens *[]string) error {
 
 	// in recursive descent parsers we write a method to match each "entity " in the string
 	// we also have methods that implement a production rule in the grammar, so basically we need function to match:
 	// keyword tokens, numbers, strings, objects, and arrays
 	pos := -1
 	if len(*tokens) == 0 {
-		return false, fmt.Errorf("Expected tokens but found nil")
+		return fmt.Errorf("Expected tokens but found nil")
 	}
 	lastToken := (*tokens)[len(*tokens)-1]
 	switch (*tokens)[pos+1] {
 	case LEFTCURLYBRACE:
 		if lastToken != RIGHTCURLYBRACE {
-			return false, parserError(len(*tokens)-1, "}", lastToken)
+			return parserError(len(*tokens)-1, "}", lastToken)
 		}
 		if _, err := parseObject(tokens, &pos, true); err != nil {
-			return false, err
+			return err
 		}
-		return true, nil
+		return nil
 	case LEFTSQUAREBRACE:
 
 		if lastToken != RIGHTSQUAREBRACE {
-			return false, parserError(len(*tokens)-1, "}", lastToken)
+			return parserError(len(*tokens)-1, "}", lastToken)
 		}
 		if _, err := parseArray(tokens, &pos, true); err != nil {
-			return false, err
+			return err
 		}
-		return true, nil
+		return nil
 
 	}
 	updatePos(&pos)
-	return false, fmt.Errorf("Invalid JSON string. Expected { or [, got %s", (*tokens)[pos])
+	return fmt.Errorf("Invalid JSON string. Expected { or [, got %s", (*tokens)[pos])
 }
 func parseObject(tokens *[]string, pos *int, isOuterObject bool) (bool, error) {
 
