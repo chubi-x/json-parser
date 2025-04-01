@@ -329,6 +329,7 @@ func TestMultilineArrayWithMultipleElements(t *testing.T) {
 	}
 }
 
+// line 20 on this test will fail because of the naive handling of escaped characters in the lexer
 func TestComplexObjectWithEdgeCases(t *testing.T) {
 	buffer := bytes.NewBufferString(
 		`[

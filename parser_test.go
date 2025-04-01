@@ -36,6 +36,7 @@ var _ = filepath.Walk("tests", func(path string, info os.FileInfo, walkErr error
 	return nil
 })
 
+// tests/rfctests/pass1.json will fail because of the naive handling of escaped characters
 func TestInvalid(t *testing.T) {
 
 	for _, json := range invalidFiles {
@@ -43,7 +44,7 @@ func TestInvalid(t *testing.T) {
 		buf := bytes.NewBuffer(make([]byte, 0))
 		io.Copy(buf, json.file)
 		tokens := slices.Concat(Lex(buf)...)
-		_, parseErr := Parse(tokens)
+		_, parseErr := Parse(&tokens)
 		if parseErr == nil {
 
 			t.Errorf("Expected invalid but got valid: %s", json.path)
@@ -57,7 +58,7 @@ func TestValid(t *testing.T) {
 		buf := bytes.NewBuffer(make([]byte, 0))
 		io.Copy(buf, json.file)
 		tokens := slices.Concat(Lex(buf)...)
-		_, parseErr := Parse(tokens)
+		_, parseErr := Parse(&tokens)
 		if parseErr != nil {
 
 			t.Errorf("Expected valid but got invalid for %s: %s", json.path, parseErr)
