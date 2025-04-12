@@ -1,8 +1,5 @@
 # JSON Parser CLI
 
-> [!NOTE]
-> I built this as an exercise in learning how to program with Go so please excuse the shabiness!
-
 ## Installation
 
 You can build from source or download a binary from the [releases page](https://github.com/chubi-x/json-parser/releases/tag/v1). To build from source simply clone the repo and run `go build main.go`
