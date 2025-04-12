@@ -6,6 +6,7 @@ You can build from source or download a binary from the [releases page](https://
 
 ## Usage
 
-The program accepts json input from a file or from stdin. You can specify a file like so:
+The program accepts json input from a file, from stdin, or as a string of text. You can specify a file like so:
 `./jsonparse --file <path to file>`
 You can also pass in input by piping data, for example `cat test.json | ./jsonparse` or simply running `./jsonparse` and typing in the json input.
+If pasing in a json string directly you can do so like: `./jsonparse {"key":"value"}`
